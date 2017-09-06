@@ -1,0 +1,2 @@
+bash -c ./spriteExporter
+pause

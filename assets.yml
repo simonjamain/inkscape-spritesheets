@@ -1,0 +1,98 @@
+factor: 1
+sprites:
+    - name: hero
+      x0: 100
+      y0: 547
+      w: 100
+      h: 102
+      stances:
+          - name: walking
+            frames: [2,3,4,5,6,7,8]
+          - name: idle
+            frames: [1]
+    - name: worker
+      x0: 200
+      y0: 548
+      w: 100
+      h: 102
+      stances:
+          - name: walking
+            frames: [2,3,4,5,6,7,8]
+          - name: idle
+            frames: [1]
+    - name: boss
+      x0: 0
+      y0: 547
+      w: 100
+      h: 112
+      stances:
+          - name: walking
+            frames: [2,3,4,5,6,7,8]
+          - name: idle
+            frames: [1]
+    - name: world
+      x0: -600
+      y0: -220
+      w: 400
+      h: 720
+      stances:
+          - name: normal
+            frames: [1,2]
+          - name: tableau
+            frames: [3,4]
+          - name: ecritures
+            frames: [5,6]
+          - name: bureaux
+            frames: [7,8]
+          - name: drapeaux
+            frames: [9,10]
+    - name: block
+      x0: -800
+      y0: -150
+      w: 70
+      h: 70
+      stances:
+          - name: normal
+            frames: [1,2]
+          - name: special
+            frames: [3,4]
+    - name: block_1x4
+      x0: -1060
+      y0: -670
+      w: 70
+      h: 220
+      stances:
+          - name: capitalist
+            frames: [1,2]
+    - name: block_2x2
+      x0: -1060
+      y0: -420
+      w: 120
+      h: 140
+      stances:
+          - name: capitalist
+            frames: [1,2]
+    - name: block_2x3
+      x0: -900
+      y0: -420
+      w: 120
+      h: 190
+      stances:
+          - name: capitalist
+            frames: [1,2]
+    - name: block_2x4
+      x0: -750
+      y0: -420
+      w: 120
+      h: 240
+      stances:
+          - name: capitalist
+            frames: [1,2]
+    - name: flag
+      x0: -750
+      y0: -850
+      w: 130
+      h: 300
+      stances:
+          - name: capitalist
+            frames: [1,2]

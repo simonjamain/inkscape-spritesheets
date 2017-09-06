@@ -1,0 +1,115 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+require 'yaml'
+require 'nokogiri'
+require 'fileutils'
+require 'shellwords'
+require 'tempfile'
+require 'byebug'
+
+
+
+ACCEPTED_CONFIGFILE_EXTENSIONS = %w( .yml )
+SOURCES_EXTENSION = 'svg'
+
+def isValidConfigFile?(configFile)
+  ACCEPTED_CONFIGFILE_EXTENSIONS.include? File.extname(configFile).downcase
+end
+
+def isAnterior?(oldFile, newFile)
+  File.mtime(oldFile) < File.mtime(newFile)
+end
+# récupérer les arguments
+sourcesFolder = ARGV[0].to_s
+
+# localiser tout les fichiers yml
+sourceFilesToCompute = []
+Dir.foreach(sourcesFolder) do |node|
+  node = File.join sourcesFolder, node
+  if File.file?(node) && isValidConfigFile?(node)
+    configuration = YAML.load File.read(node)
+    sourceFileName = "#{node.chomp( File.extname(node) )}.#{SOURCES_EXTENSION}"
+    unless configuration['sprites'].nil? || !File.readable?(sourceFileName)
+      sourceFilesToCompute << {:sourceFileName => sourceFileName, :sprites => configuration['sprites'], :factor => configuration['factor']}
+    end
+  end
+end
+
+# envoyer la sauce
+
+sourceFilesToCompute.each do |sourceFileToCompute|
+
+  svgSource = Nokogiri::XML(File.read(sourceFileToCompute[:sourceFileName]))
+
+  
+
+# 2 COMPUTING
+  #produce a png for each sprites
+  sourceFileToCompute[:sprites].each do |sprite|
+
+    exportFolderName = 'sprite'
+    exportFileName = "#{sprite['name']}.png"
+    exportFullpath = File.join exportFolderName, exportFileName
+    FileUtils.mkpath(exportFolderName)
+
+    # check if export is needed
+    begin
+      next if isAnterior? sourceFileToCompute[:sourceFileName], "#{exportFullpath}.pdf"
+    rescue
+    end
+  
+    tmpSpriteStancesFiles = []
+    sprite['stances'].each do |stance|#each stance ---------------------
+
+      svgToEdit = svgSource.clone
+
+      svgAllLayers = svgToEdit.xpath('//svg:g[@inkscape:groupmode="layer"]')
+      
+      tmpStanceFramesFiles = []
+      stance['frames'].each do |frameNumber|#each frame ---------------------
+      
+        svgAllLayers.each do |svgLayer|
+          svgCurrentLayerName = svgLayer.attributes['label'].value
+          if /^frame [0-9]+$/ =~ svgCurrentLayerName && frameNumber == /^frame ([0-9]+)$/.match(svgCurrentLayerName).captures.first.to_i
+            begin
+            svgLayer.attributes['style'].value = 'display:inline' #force layer display
+            rescue
+            end
+          else
+            begin
+            svgLayer.attributes['style'].value = 'display:none' #force layer display
+            rescue
+            end
+          end
+        end
+        
+          
+        # create a temporary svg file anf write modified svg inside
+        tmpSourceFile = Tempfile.new(['spriteStance', '.svg'])
+        File.write(tmpSourceFile.path, svgToEdit.to_xml)
+      
+        # create a temporary frame file and put it in the array
+        tmpStanceFrameFile = Tempfile.new(['spriteStance', '.png'])
+        tmpStanceFramesFiles.push(tmpStanceFrameFile)
+        
+        #convert svg to png
+        puts command = "inkscape -C --export-area=#{sprite['x0']}:#{sprite['y0']}:#{sprite['x0']+sprite['w']}:#{sprite['y0']+sprite['h']} --export-png=#{tmpStanceFrameFile.path.shellescape} --export-dpi=#{sourceFileToCompute[:factor]*90} --without-gui #{tmpSourceFile.path.shellescape}"
+        system command
+      end
+      #create a temporary stance file and put it in the array
+      tmpSpriteStancesFile = Tempfile.new(['spriteStance', '.png'])
+      tmpSpriteStancesFiles.push(tmpSpriteStancesFile)
+
+      #assemble frames
+      tmpStanceFrameFilesList = tmpStanceFramesFiles.map { |file| file.path.shellescape }.join(" ")
+      puts command = "convert #{tmpStanceFrameFilesList} +append #{tmpSpriteStancesFile.path.shellescape}"
+
+      system command
+    end
+      
+    #assemble stances
+    tmpSpriteStancesFilesList = tmpSpriteStancesFiles.map { |file| file.path.shellescape }.join(" ")
+    puts command = "convert #{tmpSpriteStancesFilesList} -append #{exportFullpath.shellescape}"
+    system command
+  end
+end
